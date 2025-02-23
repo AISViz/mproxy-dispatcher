@@ -16,7 +16,7 @@ name = "mproxy-client"
 [lib]
 
 [dependencies]
-chrono = "0.4"
+time = { version = "0.3", features = ["formatting", "parsing"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 default-net = "0.14"
