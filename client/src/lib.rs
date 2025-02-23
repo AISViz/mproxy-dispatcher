@@ -74,6 +74,9 @@ use std::io::{stdin, stdout, BufRead, BufReader, BufWriter, Read, Result as ioRe
 use std::net::{IpAddr, Ipv6Addr, SocketAddr, ToSocketAddrs, UdpSocket};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::fs::{self, create_dir_all};
+use chrono::{Local, Duration};
+use std::path::Path;
 
 const BUFSIZE: usize = 8096;
 
@@ -143,7 +146,7 @@ pub fn target_socket_interface(server_addr: &String) -> ioResult<(SocketAddr, Ud
 
 /// Read bytes from `path` info a buffer, and forward to downstream UDP server addresses.
 /// Optionally copy output to stdout
-pub fn client_socket_stream(path: &PathBuf, server_addrs: Vec<String>, tee: bool) -> ioResult<()> {
+pub fn client_socket_stream(path: &PathBuf, server_addrs: Vec<String>, tee: bool, backup_interval: Option<u64>) -> ioResult<()> {
     let mut targets = vec![];
 
     for server_addr in server_addrs {
@@ -190,6 +193,11 @@ pub fn client_socket_stream(path: &PathBuf, server_addrs: Vec<String>, tee: bool
             continue;
         }
 
+        // Backup data if needed
+        if backup_interval.is_some() {
+            backup_data(&buf[0..c], backup_interval)?;
+        }
+
         for (target_addr, target_socket) in &targets {
             if !(target_addr.is_ipv6() && target_addr.ip().is_multicast()) {
                 target_socket
@@ -209,6 +217,54 @@ pub fn client_socket_stream(path: &PathBuf, server_addrs: Vec<String>, tee: bool
             #[cfg(debug_assertions)]
             assert!(c == _o);
         }
+
     }
     Ok(())
 }
+
+
+/// Backup the data to a file in ./ais_backup directory with current date as filename
+/// and clean up old backup files based on backup_interval
+fn backup_data(data: &[u8], backup_interval: Option<u64>) -> ioResult<()> {
+    let backup_dir = Path::new("./ais_backup");
+    
+    // Create backup directory if it doesn't exist
+    create_dir_all(backup_dir)?;
+    
+    // Create backup file with current date as name
+    let current_date = Local::now().format("%Y-%m-%d").to_string();
+    let backup_path = backup_dir.join(format!("{}.log", current_date));
+    
+    // Append data to backup file
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&backup_path)?;
+    file.write_all(data)?;
+    
+    // Clean up old backup files if backup_interval is specified
+    if let Some(days) = backup_interval {
+        let cutoff_date = Local::now() - Duration::days(days as i64);
+        
+        if let Ok(entries) = fs::read_dir(backup_dir) {
+            for entry in entries.flatten() {
+                let filename = entry.file_name();
+                let filename_str = filename.to_string_lossy();
+                if filename_str.ends_with(".log") {
+                    // Parse date from filename (format: YYYY-MM-DD.log)
+                    if let Ok(file_date) = chrono::NaiveDate::parse_from_str(
+                        &filename_str[..10],
+                        "%Y-%m-%d"
+                    ) {
+                        if file_date < cutoff_date.date_naive() {
+                            let _ = fs::remove_file(entry.path());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+

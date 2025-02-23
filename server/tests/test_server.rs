@@ -77,8 +77,8 @@ fn test_server_multiple_clients_single_channel() {
     let target_addr_1 = "[::1]:9904".to_string();
     let target_addr_2 = "[::1]:9904".to_string();
     let _l = listener(listen_addr_1, PathBuf::from_str(pathstr_1).unwrap(), false);
-    let _c1 = client_socket_stream(&PathBuf::from("./Cargo.toml"), vec![target_addr_1], false);
-    let _c2 = client_socket_stream(&PathBuf::from("../Cargo.toml"), vec![target_addr_2], false);
+    let _c1 = client_socket_stream(&PathBuf::from("./Cargo.toml"), vec![target_addr_1], false, None);
+    let _c2 = client_socket_stream(&PathBuf::from("../Cargo.toml"), vec![target_addr_2], false, None);
 }
 
 #[test]
@@ -97,6 +97,6 @@ fn test_server_multiple_clients_dual_channel() {
     let target_addr_2 = "[::1]:9906".to_string();
     let _l1 = listener(listen_addr_1, PathBuf::from_str(pathstr_1).unwrap(), false);
     let _l2 = listener(listen_addr_2, PathBuf::from_str(pathstr_1).unwrap(), false);
-    let _c1 = client_socket_stream(&PathBuf::from("./Cargo.toml"), vec![target_addr_1], false);
-    let _c2 = client_socket_stream(&PathBuf::from("../Cargo.toml"), vec![target_addr_2], false);
+    let _c1 = client_socket_stream(&PathBuf::from("./Cargo.toml"), vec![target_addr_1], false, None);
+    let _c2 = client_socket_stream(&PathBuf::from("../Cargo.toml"), vec![target_addr_2], false, None);
 }

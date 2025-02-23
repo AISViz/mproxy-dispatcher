@@ -10,7 +10,7 @@ use mproxy_server::listener;
 
 fn test_client(pathstr: &str, listen_addr: String, target_addr: String, tee: bool) {
     let _l = listener(listen_addr, PathBuf::from_str(pathstr).unwrap(), false);
-    let _c = client_socket_stream(&PathBuf::from(TESTDATA), vec![target_addr], tee);
+    let _c = client_socket_stream(&PathBuf::from(TESTDATA), vec![target_addr], tee, None);
     let bytesize = truncate(PathBuf::from_str(pathstr).unwrap());
     println!("log size: {}", bytesize);
     assert!(bytesize > 0);
@@ -72,6 +72,7 @@ fn test_client_multiple_servers() {
         &PathBuf::from(TESTDATA),
         vec![target_addr_1, target_addr_2],
         false,
+        None,
     );
     sleep(Duration::from_millis(50));
     let bytesize_1 = truncate(PathBuf::from_str(pathstr_1).unwrap());

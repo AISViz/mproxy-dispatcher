@@ -29,7 +29,7 @@ fn test_client_bitrate(b: &mut Bencher) {
     let mut buf = [0u8; BUFSIZE];
 
     let _c = Builder::new().spawn(move || {
-        client_socket_stream(&PathBuf::from("/dev/random"), vec![target_addr], false)
+        client_socket_stream(&PathBuf::from("/dev/random"), vec![target_addr], false, None)
     });
 
     let start = Instant::now();

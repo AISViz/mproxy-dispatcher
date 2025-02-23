@@ -15,8 +15,9 @@ USAGE:
   mproxy-client [FLAGS] [OPTIONS] ...
 
 OPTIONS:
-  --path        [FILE_DESCRIPTOR]   Filepath, descriptor, or handle. Use "-" for stdin
-  --server-addr [HOSTNAME:PORT]     Downstream UDP server address. May be repeated
+  --path            [FILE_DESCRIPTOR]   Filepath, descriptor, or handle. Use "-" for stdin
+  --server-addr     [HOSTNAME:PORT]     Downstream UDP server address. May be repeated
+  --backup-interval [DAYS]              Backup interval in days. Default is no backup
 
 FLAGS:
   -h, --help    Prints help information
@@ -33,6 +34,7 @@ pub struct ClientArgs {
     path: PathBuf,
     server_addrs: Vec<String>,
     tee: bool,
+    backup_interval: Option<u64>,
 }
 
 /// retrieve command line arguments as ClientArgs struct
@@ -43,6 +45,7 @@ fn parse_args() -> Result<ClientArgs, pico_args::Error> {
         exit(0);
     }
     let tee = pargs.contains(["-t", "--tee"]);
+    let backup_interval: Option<u64> = pargs.opt_value_from_str("--backup-interval")?;
 
     fn parse_path(s: &OsStr) -> Result<PathBuf, &'static str> {
         Ok(s.into())
@@ -52,6 +55,7 @@ fn parse_args() -> Result<ClientArgs, pico_args::Error> {
         path: pargs.value_from_os_str("--path", parse_path)?,
         server_addrs: pargs.values_from_str("--server-addr")?,
         tee,
+        backup_interval,
     };
     let remaining = pargs.finish();
     if !remaining.is_empty() {
@@ -76,5 +80,5 @@ pub fn main() {
             exit(1);
         }
     };
-    let _ = client_socket_stream(&args.path, args.server_addrs, args.tee);
+    let _ = client_socket_stream(&args.path, args.server_addrs, args.tee, args.backup_interval);
 }

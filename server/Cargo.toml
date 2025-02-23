@@ -21,3 +21,8 @@ features = [ "eq-separator",]
 [dev-dependencies]
 mproxy-client = {path = "../client"}
 testconfig = {path = "../testconfig"}
+
+[[bench]]
+name = "bench_server"
+harness = true
+required-features = ["nightly"]
